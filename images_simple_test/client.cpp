@@ -1,27 +1,80 @@
-#include <stdio.h>
-#include <zmq.hpp>
+#include <zmq.hpp> 
+#include <string>
+#include <iostream>
+#include <sstream>
+#include <nlohmann/json.hpp> 
 #include <opencv2/opencv.hpp>
-#include "fstream"
-#include "iostream"
-int main()
-{
-    zmq::context_t context(1);
-    zmq::socket_t sock(context, ZMQ_REQ);
-    sock.connect("tcp://localhost:5555");
-    std::string data;
-    {
-        cv::Mat Imgdata = cv::imread("bagree.JPG", CV_LOAD_IMAGE_GRAYSCALE);
-        std::vector<uchar> data_encode;
-        cv::imencode("bagree.JPG", Imgdata, data_encode);
-        data = std::string(data_encode.begin(), data_encode.end());
-    }
-    // send
-    {
-        zmq::message_t message(data.size());
-        memcpy(message.data(), data.c_str(), data.size());
-        sock.send(message);
-    }
-    sock.close();
-    system("pause");
-    return 0;
-}
+#include "opencv2/imgproc/imgproc_c.h"
+#include "opencv2/imgproc/imgproc.hpp"
+#include <typeinfo>
+
+// for convenience
+using json = nlohmann::json;
+
+
+
+
+class client_class
+  {
+    public:
+      void client_function()
+        {
+          while (true)
+            {
+              // create an empty structure (null)
+              json j;
+              std::string data;
+              float f = 3.12;
+
+              // add a number that is stored as double (note the implicit conversion of j to an object)
+              cv::Mat mat = cv::imread("cat.jpg",CV_LOAD_IMAGE_COLOR);
+              std::vector<uchar> array;
+              if (mat.isContinuous()) 
+                {
+                  array.assign(mat.datastart, mat.dataend);
+                } 
+              else 
+                {
+                  for (int i = 0; i < mat.rows; ++i) 
+                    {
+                      array.insert(array.end(), mat.ptr<uchar>(i), mat.ptr<uchar>(i)+mat.cols);
+                    }
+                }
+
+              std::vector<uint> v = {1,5,9};
+              j["Type"] = f;                            //float
+              j["vec"] = v;                             //vector
+              j["Image"]["rows"] = mat.rows;            //Number of rows in the image matrix
+              j["Image"]["cols"] = mat.cols;            //Number of columns
+              j["Image"]["channels"] = mat.channels();  //Number of channels of the image
+              j["Image"]["data"] = array;               //Pass the array
+              j["Parameter"] = "Frequency";             //String
+              j["Value"] = "5.17e9";                    //string
+
+             
+              std::string s = j.dump();                 // explicit conversion to string
+
+
+
+              Json::Value root;
+              Json::Reader reader;
+              reader.parse(strJson.c_str(),root);
+              Json::FastWriter fastwriter;
+              std::string message = fastwriter.write(root); 
+              zmq::context_t context (1);
+              zmq::socket_t socket (context, ZMQ_REQ);
+              socket.connect ("tcp://localhost:5555");
+              zmq::message_t request (s.size());
+              memcpy (request.data (), (s.c_str()), (s.size()));
+              socket.send(request);
+            }
+        }
+
+  };
+
+int main (void)
+  {
+    client_class caller;
+    caller.client_function();
+  }
+
