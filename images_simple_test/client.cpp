@@ -27,7 +27,7 @@ class client_class
               float f = 3.12;
 
               // add a number that is stored as double (note the implicit conversion of j to an object)
-              cv::Mat mat = cv::imread("cat.jpg",CV_LOAD_IMAGE_COLOR);
+              cv::Mat mat = cv::imread("insti.jpg",CV_LOAD_IMAGE_COLOR);
               std::vector<uchar> array;
               if (mat.isContinuous()) 
                 {
@@ -54,13 +54,6 @@ class client_class
              
               std::string s = j.dump();                 // explicit conversion to string
 
-
-
-              Json::Value root;
-              Json::Reader reader;
-              reader.parse(strJson.c_str(),root);
-              Json::FastWriter fastwriter;
-              std::string message = fastwriter.write(root); 
               zmq::context_t context (1);
               zmq::socket_t socket (context, ZMQ_REQ);
               socket.connect ("tcp://localhost:5555");
